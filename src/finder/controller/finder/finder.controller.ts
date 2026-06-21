@@ -25,11 +25,6 @@ export class FinderController {
       patchBehavior,
     } = req.query;
 
-    if (!eventIds || typeof eventIds !== 'string')
-      throw new BadRequestException(
-        'QueryError',
-        'You forgot to provide the eventIds query parameter.',
-      );
     if (!agents || typeof agents !== 'string')
       throw new BadRequestException(
         'QueryError',
@@ -42,7 +37,9 @@ export class FinderController {
       );
 
     return await this.finderService.findComb(
-      eventIds.split(','),
+      typeof eventIds !== 'string'
+        ? []
+        : eventIds.split(','),
       agents.split(','),
       map,
       winningState
@@ -57,6 +54,8 @@ export class FinderController {
       needsToHaveVod
         ? typeof needsToHaveVod === 'string'
           ? needsToHaveVod === 'true'
+            ? true
+            : undefined
           : undefined
         : undefined,
       patch
