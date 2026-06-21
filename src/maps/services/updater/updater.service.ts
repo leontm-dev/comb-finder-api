@@ -219,7 +219,7 @@ export class UpdaterService {
     console.log('Ended');
   }
 
-  @Cron('0 8 11 * * *')
+  @Cron('0 17 11 * * *')
   async updateMapsForAllEvents() {
     try {
       await fetch(
