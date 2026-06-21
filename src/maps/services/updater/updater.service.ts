@@ -61,7 +61,7 @@ export class UpdaterService {
   async updateMapsForLast10Events() {
     try {
       await fetch(
-        'https://vlrgg-scraping-api.onrender.com//health',
+        'https://vlrgg-scraping-api.onrender.com/health',
         {
           method: 'GET',
         },
@@ -220,8 +220,9 @@ export class UpdaterService {
     this.logger.log('Ended');
   }
 
-  @Cron('0 28 11 * * *')
+  @Cron('0 40 11 * * *')
   async updateMapsForAllEvents() {
+    this.logger.log('Started');
     try {
       await fetch(
         'https://vlrgg-scraping-api.onrender.com/health',
@@ -235,7 +236,6 @@ export class UpdaterService {
       return;
     }
 
-    this.logger.log('Started');
     const events = await this.eventsService.getAll();
 
     const data: Record<
