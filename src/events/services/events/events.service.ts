@@ -14,8 +14,8 @@ export class EventsService {
     return await this.model.create(doc);
   }
   async createBulk(docs: Partial<VlrEvent>[]) {
-    return await this.model.create(docs, {
-      aggregateErrors: true,
+    return await this.model.insertMany(docs, {
+      throwOnValidationError: false,
     });
   }
 
