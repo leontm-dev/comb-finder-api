@@ -24,14 +24,15 @@ export class EventsService {
   }
 
   async getAllWithPagination(
-    limit: number = 100,
-    page: number = 0,
+    skip: number = 0,
+    limit?: number,
   ) {
-    return await this.model
-      .find()
-      .limit(limit)
-      .skip(page * limit)
-      .exec();
+    const query = this.model.find().skip(skip);
+    if (limit) {
+      query.limit(limit);
+    }
+
+    return await query.exec();
   }
 
   async getOneById(id: Types.ObjectId) {
