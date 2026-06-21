@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import type { Model } from 'mongoose';
+import type { _QueryFilter, Model, Types } from 'mongoose';
 import { VlrMap } from 'src/maps/schemas/map.schema';
 import type { TMaps } from 'src/types/maps.types';
 
@@ -38,76 +38,63 @@ export class MapsService {
       hasVod: undefined,
     },
   ) {
-    console.log({
-      won:
-        filters.winningState === undefined
-          ? undefined
-          : filters.winningState === 'won',
-      vodUrl:
-        filters.hasVod === undefined
-          ? undefined
-          : filters.hasVod
-            ? { $not: { $eq: null } }
-            : null,
-      patch:
-        filters.patchBehavior === undefined
-          ? undefined
-          : filters.patch === undefined
-            ? undefined
-            : filters.patchBehavior === 'on'
-              ? filters.patch
-              : filters.patchBehavior === 'above'
-                ? { $gte: filters.patch }
-                : { $lte: filters.patch },
+    const queryObj: _QueryFilter<{
+      won: boolean;
+      _id: Types.ObjectId;
+      createdAt: Date;
+      updatedAt: Date;
+      vlrId: string;
+      customId: string;
+      name: NonNullable<TMaps>;
+      agents: string[];
+      team: string;
+      teamLogoUrl: string;
+      vodUrl: string;
+      patch: number;
+      eventId: string;
+    }> = {};
+    if (filters.winningState)
+      queryObj.won = filters.winningState === 'won';
 
-      eventId: filters.eventIds?.length
-        ? { $in: filters.eventIds }
-        : undefined,
-      name: filters.map as TMaps | undefined,
-      agents: filters.agents
-        ? {
-            $all: filters.agents.map((agent) =>
-              agent.toLowerCase(),
+    if (filters.hasVod)
+      queryObj.vodUrl = filters.hasVod
+        ? { $not: { $eq: null } }
+        : null;
+
+    if (filters.patch && filters.patchBehavior) {
+      switch (filters.patchBehavior) {
+        case 'above':
+          queryObj.patch = { $gte: filters.patch };
+        case 'below':
+          queryObj.patch = { $lte: filters.patch };
+        case 'on':
+          queryObj.patch = filters.patch;
+      }
+    }
+
+    if (filters.eventIds && filters.eventIds.length > 0) {
+      queryObj.eventId = { $in: filters.eventIds };
+    }
+
+    if (filters.agents) {
+      queryObj.agents = {
+        $all: filters.agents.map(
+          (agent) =>
+            new RegExp(
+              `^${decodeURIComponent(agent.toLowerCase())}$`,
+              'i',
             ),
-          }
-        : undefined,
-    });
-    return await this.mapModel
-      .find({
-        won:
-          filters.winningState === undefined
-            ? undefined
-            : filters.winningState === 'won',
-        vodUrl:
-          filters.hasVod === undefined
-            ? undefined
-            : filters.hasVod
-              ? { $not: { $eq: null } }
-              : null,
-        patch:
-          filters.patchBehavior === undefined
-            ? undefined
-            : filters.patch === undefined
-              ? undefined
-              : filters.patchBehavior === 'on'
-                ? filters.patch
-                : filters.patchBehavior === 'above'
-                  ? { $gte: filters.patch }
-                  : { $lte: filters.patch },
+        ),
+      };
+    }
 
-        eventId: filters.eventIds?.length
-          ? { $in: filters.eventIds }
-          : undefined,
-        name: filters.map as TMaps | undefined,
-        agents: filters.agents
-          ? {
-              $all: filters.agents.map((agent) =>
-                agent.toLowerCase(),
-              ),
-            }
-          : undefined,
-      })
-      .exec();
+    if (filters.map) {
+      queryObj.name = filters.map
+        .toString()
+        .toLowerCase() as TMaps;
+    }
+
+    return await this.mapModel.find(queryObj).exec();
   }
 
   async create(map: Partial<VlrMap>) {
@@ -115,7 +102,20 @@ export class MapsService {
   }
 
   async createBulk(maps: Partial<VlrMap>[]) {
-    return await this.mapModel.insertMany(maps, {
+    const customIds = maps
+      .map((map) => map.customId)
+      .filter((map) => !!map) as string[];
+    const checkedMaps = await this.mapModel.find({
+      customId: { $in: customIds },
+    });
+    const newMaps = maps.filter(
+      (map) =>
+        !checkedMaps.find(
+          (cm) => cm.customId === map.customId,
+        ),
+    );
+    if (newMaps.length === 0) return [];
+    return await this.mapModel.insertMany(newMaps, {
       throwOnValidationError: false,
     });
   }
