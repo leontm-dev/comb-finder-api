@@ -219,7 +219,7 @@ export class UpdaterService {
     console.log('Ended');
   }
 
-  @Cron('0 50 10 * * *')
+  @Cron('0 8 11 * * *')
   async updateMapsForAllEvents() {
     try {
       await fetch(
@@ -232,6 +232,7 @@ export class UpdaterService {
       console.error(error);
       return console.log('Health check failed!');
     }
+    console.log('Started');
     const events = await this.eventsService.getAll();
 
     const data: Record<
