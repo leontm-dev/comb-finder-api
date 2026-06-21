@@ -1,5 +1,4 @@
-import { writeFile } from 'fs';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import Bottleneck from 'bottleneck';
 import { EventsService } from 'src/events/services/events/events.service';
@@ -51,6 +50,8 @@ export class UpdaterService {
     minTime: 3050,
     maxConcurrent: 1, // Stellt sicher, dass nicht zwei Requests exakt zeitgleich loslaufen
   });
+
+  private readonly logger = new Logger(UpdaterService.name);
   constructor(
     private readonly mapsService: MapsService,
     private readonly eventsService: EventsService,
@@ -66,7 +67,7 @@ export class UpdaterService {
         },
       );
     } catch (error) {
-      console.error(error);
+      this.logger.error(error);
       return console.log('Health check failed!');
     }
     const events =
@@ -116,7 +117,7 @@ export class UpdaterService {
                   { method: 'GET' },
                 ).then((res) => {
                   if (!res.ok) {
-                    console.log(
+                    this.logger.log(
                       res.status,
                       res.statusText,
                       res.ok,
@@ -216,23 +217,25 @@ export class UpdaterService {
       }),
     );
 
-    console.log('Ended');
+    this.logger.log('Ended');
   }
 
-  @Cron('0 17 11 * * *')
+  @Cron('0 28 11 * * *')
   async updateMapsForAllEvents() {
     try {
       await fetch(
-        'https://vlrgg-scraping-api.onrender.com//health',
+        'https://vlrgg-scraping-api.onrender.com/health',
         {
           method: 'GET',
         },
       );
     } catch (error) {
-      console.error(error);
-      return console.log('Health check failed!');
+      this.logger.error(error);
+      this.logger.log('Health check failed!');
+      return;
     }
-    console.log('Started');
+
+    this.logger.log('Started');
     const events = await this.eventsService.getAll();
 
     const data: Record<
@@ -279,7 +282,7 @@ export class UpdaterService {
                   { method: 'GET' },
                 ).then((res) => {
                   if (!res.ok) {
-                    console.log(
+                    this.logger.log(
                       res.status,
                       res.statusText,
                       res.ok,
@@ -374,20 +377,20 @@ export class UpdaterService {
           failedCount: failed,
           failedIds,
         };
-        console.log(event.title, dataObject);
+        this.logger.log(event.title, dataObject);
         data[event.title] = dataObject;
       }),
     );
 
-    writeFile(
-      'results.json',
-      JSON.stringify(data),
-      (err) => {
-        if (err) {
-          console.error(err);
-        }
-      },
-    );
-    console.log('Ended');
+    // writeFile(
+    //   'results.json',
+    //   JSON.stringify(data),
+    //   (err) => {
+    //     if (err) {
+    //       console.error(err);
+    //     }
+    //   },
+    // );
+    this.logger.log('Ended');
   }
 }
