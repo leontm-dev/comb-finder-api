@@ -9,6 +9,7 @@ type CombResult = {
     iconUrl: string;
     name: string;
   };
+  won: boolean;
   vod: string | null;
   event: {
     iconUrl: string | null;
@@ -33,12 +34,6 @@ export class FinderService {
     patch?: number,
     patchBehavior?: 'above' | 'on' | 'below',
   ): Promise<CombResult[]> {
-    if (!eventIds || eventIds.length === 0) return [];
-
-    const events =
-      await this.eventsService.getManyByVlrIds(eventIds);
-    if (!events || events.length === 0) return [];
-
     const maps = await this.mapsService.getManyWithFilters({
       hasVod: needsToHaveVod,
       patch,
@@ -46,10 +41,12 @@ export class FinderService {
       winningState,
       map,
       agents,
-      eventIds: events.map((event) => event.vlrId),
+      eventIds: eventIds,
     });
 
-    console.log(maps);
+    const events = await this.eventsService.getManyByVlrIds(
+      maps.map((map) => map.eventId),
+    );
     return maps.map((map) => ({
       agents: map.agents,
       patch: map.patch,
@@ -70,6 +67,7 @@ export class FinderService {
       },
       map: map.name,
       vod: map.vodUrl,
+      won: map.won,
     }));
   }
 }
