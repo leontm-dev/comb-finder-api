@@ -1,5 +1,5 @@
+import { writeFile } from 'node:fs';
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
 import Bottleneck from 'bottleneck';
 import { EventsService } from 'src/events/services/events/events.service';
 import type { VlrMap } from 'src/maps/schemas/map.schema';
@@ -59,184 +59,19 @@ export class UpdaterService {
 
   // @Cron("0 0 1 * * *")
   async updateMapsForLast10Events() {
-    try {
-      await fetch(
-        'https://vlrgg-scraping-api.onrender.com/health',
-        {
-          method: 'GET',
-        },
-      );
-    } catch (error) {
-      this.logger.error(error);
-      return console.log('Health check failed!');
-    }
-    const events =
-      await this.eventsService.getAllWithPagination(10, 0);
-
-    const data: Record<
-      string,
-      {
-        eventId: string;
-        mapsCreated: number;
-        totalNumberOfGames: number;
-        totalNumberOfMaps: number;
-        failedCount: number;
-        failedIds: string[];
-      }
-    > = {};
-    await Promise.all(
-      events.map(async (event) => {
-        const eventMaps = (await this.reqLimiter.schedule(
-          () =>
-            fetch(
-              `https://vlrgg-scraping-api.onrender.com/v2/events/matches?event_id=${event.vlrId}`,
-              {
-                method: 'GET',
-              },
-            ).then((res) => res.json()),
-        )) as EventMapsResponse;
-
-        // const alreadySavedEventMaps = maps.filter(
-        //   (map) => map.eventId === event.vlrId,
-        // );
-        const matchIds = eventMaps.data.segments
-          .filter(
-            (segment) => segment.status === 'Completed',
-          )
-          .map((segment) => segment.match_id);
-
-        const toBeCreated: Partial<VlrMap>[] = [];
-        let failed = 0;
-        const failedIds: string[] = [];
-        await Promise.all(
-          matchIds.map(async (matchId) => {
-            const response =
-              (await this.reqLimiter.schedule(() =>
-                fetch(
-                  `https://vlrgg-scraping-api.onrender.com/v2/match/details?match_id=${matchId}`,
-                  { method: 'GET' },
-                ).then((res) => {
-                  if (!res.ok) {
-                    this.logger.log(
-                      res.status,
-                      res.statusText,
-                      res.ok,
-                      res.headers,
-                    );
-                    return null;
-                  }
-
-                  return res.json();
-                }),
-              )) as MapResponse | null;
-
-            if (!response || !response.data.segments[0]) {
-              failed++;
-              failedIds.push(matchId);
-              return;
-            }
-
-            response.data.segments[0].maps.map(
-              (map, index) => {
-                toBeCreated.push({
-                  name: map.map_name.toLowerCase() as TMaps,
-                  agents: map.players.team1.map(
-                    (team) => team.agent,
-                  ),
-                  vlrId: matchId,
-                  eventId: event.vlrId,
-                  team: response.data.segments[0].teams[0]
-                    .name,
-                  teamLogoUrl:
-                    response.data.segments[0].teams[0].logo,
-                  won: response.data.segments[0].teams[0]
-                    .is_winner,
-                  vodUrl:
-                    response.data.segments[0].vods[
-                      index + 1
-                    ]?.url || null,
-                  patch: parseFloat(
-                    response.data.segments[0].date
-                      .split('Patch')[1]
-                      .trim(),
-                  ),
-                  customId: `${response.data.segments[0].teams[0].name}_${matchId}_${map.map_name}`,
-                });
-                toBeCreated.push({
-                  name: map.map_name.toLowerCase() as TMaps,
-                  agents: map.players.team2
-                    .map((team) => team.agent)
-                    .map((agent) =>
-                      agent.toLowerCase().trim(),
-                    ),
-                  vlrId: matchId,
-                  eventId: event.vlrId,
-                  team: response.data.segments[0].teams[1]
-                    .name,
-                  teamLogoUrl:
-                    response.data.segments[0].teams[1].logo,
-                  won: response.data.segments[0].teams[1]
-                    .is_winner,
-                  vodUrl:
-                    response.data.segments[0].vods[
-                      index + 1
-                    ]?.url || null,
-                  patch: parseInt(
-                    response.data.segments[0].date
-                      .split('Patch')[1]
-                      .trim(),
-                  ),
-                  customId: `${response.data.segments[0].teams[1].name}_${matchId}_${map.map_name}`,
-                });
-              },
-            );
-          }),
-        );
-
-        const result =
-          await this.mapsService.createBulk(toBeCreated);
-
-        const dataObject: {
-          eventId: string;
-          mapsCreated: number;
-          totalNumberOfGames: number;
-          totalNumberOfMaps: number;
-          failedCount: number;
-          failedIds: string[];
-        } = {
-          eventId: event.vlrId,
-          mapsCreated: result.length,
-          totalNumberOfGames:
-            eventMaps.data.segments.length,
-          totalNumberOfMaps: toBeCreated.length,
-          failedCount: failed,
-          failedIds,
-        };
-        console.log(event.title, dataObject);
-        data[event.title] = dataObject;
-      }),
-    );
-
-    this.logger.log('Ended');
-  }
-
-  @Cron('0 40 11 * * *')
-  async updateMapsForAllEvents() {
     this.logger.log('Started');
     try {
-      await fetch(
-        'https://vlrgg-scraping-api.onrender.com/health',
-        {
-          method: 'GET',
-        },
-      );
+      await fetch('http://localhost:3001/health', {
+        method: 'GET',
+      });
     } catch (error) {
       this.logger.error(error);
       this.logger.log('Health check failed!');
       return;
     }
 
-    const events = await this.eventsService.getAll();
+    const events =
+      await this.eventsService.getAllWithPagination(1, 0);
 
     const data: Record<
       string,
@@ -254,7 +89,7 @@ export class UpdaterService {
         const eventMaps = (await this.reqLimiter.schedule(
           () =>
             fetch(
-              `https://vlrgg-scraping-api.onrender.com/v2/events/matches?event_id=${event.vlrId}`,
+              `http://localhost:3001/v2/events/matches?event_id=${event.vlrId}`,
               {
                 method: 'GET',
               },
@@ -278,7 +113,7 @@ export class UpdaterService {
             const response =
               (await this.reqLimiter.schedule(() =>
                 fetch(
-                  `https://vlrgg-scraping-api.onrender.com/v2/match/details?match_id=${matchId}`,
+                  `http://localhost:3001/v2/match/details?match_id=${matchId}`,
                   { method: 'GET' },
                 ).then((res) => {
                   if (!res.ok) {
@@ -391,6 +226,232 @@ export class UpdaterService {
     //     }
     //   },
     // );
+    this.logger.log('Ended');
+  }
+
+  async updateMapsForAllEvents() {
+    this.logger.log('Started');
+    try {
+      await fetch('http://localhost:3001/health', {
+        method: 'GET',
+      });
+    } catch (error) {
+      this.logger.error(error);
+      this.logger.log('Health check failed!');
+      return;
+    }
+
+    const events =
+      await this.eventsService.getAllWithPagination(146);
+
+    const data: Record<
+      string,
+      {
+        eventId: string;
+        mapsCreated: number;
+        totalNumberOfGames: number;
+        totalNumberOfMaps: number;
+        failedCount: number;
+        failedIds: string[];
+      }
+    > = {};
+
+    // ÄNDERUNG: 'for...of' statt 'Promise.all(events.map(...))' für sequentielle Verarbeitung
+    for (const event of events) {
+      console.log(event.title);
+      const eventMaps = (await this.reqLimiter.schedule(
+        () =>
+          fetch(
+            `http://localhost:3001/v2/events/matches?event_id=${event.vlrId}`,
+            {
+              method: 'GET',
+            },
+          ).then((res) => res.json()),
+      )) as EventMapsResponse;
+      console.log(
+        'Games found',
+        eventMaps.data.segments.length,
+      );
+
+      const matchIds = eventMaps.data.segments
+        .filter((segment) => segment.status === 'Completed')
+        .map((segment) => segment.match_id);
+
+      console.log('Completed games left', matchIds.length);
+
+      const toBeCreated: Partial<VlrMap>[] = [];
+      let failed = 0;
+      const failedIds: string[] = [];
+
+      // Hinweis: Die Matches innerhalb EINES Events werden hier weiterhin parallel geladen.
+      // Wenn auch die Matches strikt nacheinander geladen werden sollen,
+      // ersetze auch dieses Promise.all durch ein 'for (const matchId of matchIds)'
+      await Promise.all(
+        matchIds.map(async (matchId, index) => {
+          const response = (await this.reqLimiter.schedule(
+            () =>
+              fetch(
+                `http://localhost:3001/v2/match/details?match_id=${matchId}`,
+                { method: 'GET' },
+              ).then((res) => {
+                if (!res.ok) {
+                  this.logger.log(
+                    res.status,
+                    res.statusText,
+                    res.ok,
+                    res.headers,
+                  );
+                  return null;
+                }
+
+                return res.json();
+              }),
+          )) as MapResponse | null;
+
+          if (!response || !response.data.segments[0]) {
+            failed++;
+            failedIds.push(matchId);
+            return;
+          }
+
+          console.log(
+            'Checked game #',
+            index + 1,
+            'Failed',
+            failed,
+          );
+
+          response.data.segments[0].maps.map(
+            (map, index) => {
+              toBeCreated.push({
+                name: map.map_name.toLowerCase() as TMaps,
+                agents: map.players.team1.map(
+                  (team) => team.agent,
+                ),
+                vlrId: matchId,
+                eventId: event.vlrId,
+                team: response.data.segments[0].teams[0]
+                  .name,
+                teamLogoUrl:
+                  response.data.segments[0].teams[0].logo,
+                won: response.data.segments[0].teams[0]
+                  .is_winner,
+                vodUrl:
+                  response.data.segments[0].vods[index + 1]
+                    ?.url || null,
+                patch: response.data.segments[0].date.split(
+                  'Patch',
+                )[1]
+                  ? parseFloat(
+                      (
+                        response.data.segments[0].date.split(
+                          'Patch',
+                        )[1] || ''
+                      )
+                        .toString()
+                        .trim(),
+                    )
+                  : null,
+                customId: `${response.data.segments[0].teams[0].name}_${matchId}_${map.map_name}`,
+              });
+              toBeCreated.push({
+                name: map.map_name.toLowerCase() as TMaps,
+                agents: map.players.team2
+                  .map((team) => team.agent)
+                  .map((agent) =>
+                    agent.toLowerCase().trim(),
+                  ),
+                vlrId: matchId,
+                eventId: event.vlrId,
+                team: response.data.segments[0].teams[1]
+                  .name,
+                teamLogoUrl:
+                  response.data.segments[0].teams[1].logo,
+                won: response.data.segments[0].teams[1]
+                  .is_winner,
+                vodUrl:
+                  response.data.segments[0].vods[index + 1]
+                    ?.url || null,
+                patch: response.data.segments[0].date.split(
+                  'Patch',
+                )[1]
+                  ? parseFloat(
+                      (
+                        response.data.segments[0].date.split(
+                          'Patch',
+                        )[1] || ''
+                      )
+                        .toString()
+                        .trim(),
+                    )
+                  : null,
+                customId: `${response.data.segments[0].teams[1].name}_${matchId}_${map.map_name}`,
+              });
+            },
+          );
+        }),
+      );
+
+      console.log(
+        'Matches ready to be created',
+        toBeCreated.length,
+      );
+
+      // Erst wenn alle Maps für dieses Event gesammelt wurden, wird Bulk-Create ausgeführt
+      const chunkArray = <T>(
+        array: T[],
+        size: number,
+      ): T[][] => {
+        const chunks: T[][] = [];
+        for (let i = 0; i < array.length; i += size) {
+          chunks.push(array.slice(i, i + size));
+        }
+        return chunks;
+      };
+      const chunks = chunkArray(toBeCreated, 200);
+      let mapsCreatedCount = 0;
+
+      for (const chunk of chunks) {
+        try {
+          const result =
+            await this.mapsService.createBulk(chunk);
+          mapsCreatedCount += result.length;
+        } catch (error) {
+          failedIds.push(
+            ...chunk.map((c) => c.customId || ''),
+          );
+          console.log(error);
+        }
+      }
+
+      const dataObject: {
+        eventId: string;
+        mapsCreated: number;
+        totalNumberOfGames: number;
+        totalNumberOfMaps: number;
+        failedCount: number;
+        failedIds: string[];
+      } = {
+        eventId: event.vlrId,
+        mapsCreated: mapsCreatedCount,
+        totalNumberOfGames: eventMaps.data.segments.length,
+        totalNumberOfMaps: toBeCreated.length,
+        failedCount: failed,
+        failedIds,
+      };
+      console.log(event.title, dataObject);
+      data[event.title] = dataObject;
+    } // Ende der for...of Schleife
+
+    writeFile(
+      'results.json',
+      JSON.stringify(data),
+      (err) => {
+        if (err) {
+          console.error(err);
+        }
+      },
+    );
     this.logger.log('Ended');
   }
 }
