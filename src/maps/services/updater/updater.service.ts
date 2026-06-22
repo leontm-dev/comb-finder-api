@@ -241,8 +241,7 @@ export class UpdaterService {
       return;
     }
 
-    const events =
-      await this.eventsService.getAllWithPagination(146);
+    const events = await this.eventsService.getAll();
 
     const data: Record<
       string,
