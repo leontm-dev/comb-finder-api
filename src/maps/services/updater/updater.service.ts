@@ -1,5 +1,6 @@
 import { writeFile } from 'node:fs';
 import { Injectable, Logger } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import Bottleneck from 'bottleneck';
 import { EventsService } from 'src/events/services/events/events.service';
 import type { VlrMap } from 'src/maps/schemas/map.schema';
@@ -57,13 +58,16 @@ export class UpdaterService {
     private readonly eventsService: EventsService,
   ) {}
 
-  // @Cron("0 0 1 * * *")
+  @Cron('0 0 1 * * *')
   async updateMapsForLast10Events() {
     this.logger.log('Started');
     try {
-      await fetch('http://localhost:3001/health', {
-        method: 'GET',
-      });
+      await fetch(
+        'https://vlrgg-scraping-api.onrender.com/health',
+        {
+          method: 'GET',
+        },
+      );
     } catch (error) {
       this.logger.error(error);
       this.logger.log('Health check failed!');
@@ -71,7 +75,7 @@ export class UpdaterService {
     }
 
     const events =
-      await this.eventsService.getAllWithPagination(1, 0);
+      await this.eventsService.getAllWithPagination(0, 10);
 
     const data: Record<
       string,
@@ -89,7 +93,7 @@ export class UpdaterService {
         const eventMaps = (await this.reqLimiter.schedule(
           () =>
             fetch(
-              `http://localhost:3001/v2/events/matches?event_id=${event.vlrId}`,
+              `https://vlrgg-scraping-api.onrender.com/v2/events/matches?event_id=${event.vlrId}`,
               {
                 method: 'GET',
               },
@@ -113,7 +117,7 @@ export class UpdaterService {
             const response =
               (await this.reqLimiter.schedule(() =>
                 fetch(
-                  `http://localhost:3001/v2/match/details?match_id=${matchId}`,
+                  `https://vlrgg-scraping-api.onrender.com/v2/match/details?match_id=${matchId}`,
                   { method: 'GET' },
                 ).then((res) => {
                   if (!res.ok) {
@@ -193,8 +197,31 @@ export class UpdaterService {
           }),
         );
 
-        const result =
-          await this.mapsService.createBulk(toBeCreated);
+        const chunkArray = <T>(
+          array: T[],
+          size: number,
+        ): T[][] => {
+          const chunks: T[][] = [];
+          for (let i = 0; i < array.length; i += size) {
+            chunks.push(array.slice(i, i + size));
+          }
+          return chunks;
+        };
+        const chunks = chunkArray(toBeCreated, 200);
+        let mapsCreatedCount = 0;
+
+        for (const chunk of chunks) {
+          try {
+            const result =
+              await this.mapsService.createBulk(chunk);
+            mapsCreatedCount += result.length;
+          } catch (error) {
+            failedIds.push(
+              ...chunk.map((c) => c.customId || ''),
+            );
+            console.log(error);
+          }
+        }
 
         const dataObject: {
           eventId: string;
@@ -205,7 +232,7 @@ export class UpdaterService {
           failedIds: string[];
         } = {
           eventId: event.vlrId,
-          mapsCreated: result.length,
+          mapsCreated: mapsCreatedCount,
           totalNumberOfGames:
             eventMaps.data.segments.length,
           totalNumberOfMaps: toBeCreated.length,
@@ -232,9 +259,12 @@ export class UpdaterService {
   async updateMapsForAllEvents() {
     this.logger.log('Started');
     try {
-      await fetch('http://localhost:3001/health', {
-        method: 'GET',
-      });
+      await fetch(
+        'https://vlrgg-scraping-api.onrender.com/health',
+        {
+          method: 'GET',
+        },
+      );
     } catch (error) {
       this.logger.error(error);
       this.logger.log('Health check failed!');
@@ -261,7 +291,7 @@ export class UpdaterService {
       const eventMaps = (await this.reqLimiter.schedule(
         () =>
           fetch(
-            `http://localhost:3001/v2/events/matches?event_id=${event.vlrId}`,
+            `https://vlrgg-scraping-api.onrender.com/v2/events/matches?event_id=${event.vlrId}`,
             {
               method: 'GET',
             },
@@ -290,7 +320,7 @@ export class UpdaterService {
           const response = (await this.reqLimiter.schedule(
             () =>
               fetch(
-                `http://localhost:3001/v2/match/details?match_id=${matchId}`,
+                `https://vlrgg-scraping-api.onrender.com/v2/match/details?match_id=${matchId}`,
                 { method: 'GET' },
               ).then((res) => {
                 if (!res.ok) {
