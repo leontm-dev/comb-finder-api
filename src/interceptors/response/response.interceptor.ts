@@ -4,6 +4,7 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { map, Observable } from 'rxjs';
 import { ApiResponse } from 'src/types/response.class';
 
@@ -17,17 +18,17 @@ export class ResponseInterceptor implements NestInterceptor {
       map((data) => {
         const response = context
           .switchToHttp()
-          .getResponse();
+          .getResponse<Response>();
 
         if (data instanceof ApiResponse) {
           return data;
         }
 
-        return new ApiResponse(
-          200,
-          'Success',
-          data,
-        ).toJSON();
+        return response
+          .status(200)
+          .json(
+            new ApiResponse(200, 'Success', data).toJSON(),
+          );
       }),
     );
   }
