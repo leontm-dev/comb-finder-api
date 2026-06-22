@@ -30,6 +30,29 @@ export class MapsService {
       .exec();
   }
 
+  async getManyWithPatchRange(
+    patch: number,
+    patchRange: number = 2,
+  ) {
+    const maxPatchBoundary = 11; // after x.11 it goes to x+1.0
+    const minPatch: number = patch - patchRange / 100;
+    let maxPatch: number = patch + patchRange / 100;
+
+    if (
+      maxPatch - Math.floor(maxPatch) >
+      maxPatchBoundary / 100
+    ) {
+      maxPatch = maxPatch - maxPatchBoundary / 100 + 1;
+    }
+
+    return await this.mapModel.find({
+      patch: {
+        $gte: minPatch,
+        $lte: maxPatch,
+      },
+    });
+  }
+
   async getManyWithFilters(
     filters: Filters = {
       patch: undefined,
