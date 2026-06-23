@@ -3,6 +3,7 @@ import {
   Catch,
   ExceptionFilter,
   HttpException,
+  Logger,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { ApiResponse } from 'src/types/response.class';
@@ -11,13 +12,15 @@ import { ApiResponse } from 'src/types/response.class';
 export class ExceptionsFilter<
   T,
 > implements ExceptionFilter {
+  private logger = new Logger(ExceptionsFilter.name);
   catch(exception: T, host: ArgumentsHost) {
     const response = host
       .switchToHttp()
       .getResponse<Response>();
 
+    this.logger.error(exception);
     if (exception instanceof HttpException) {
-      return response
+      response
         .status(exception.getStatus())
         .json(
           new ApiResponse(
@@ -26,8 +29,9 @@ export class ExceptionsFilter<
             null,
           ).toJSON(),
         );
+      return;
     }
-    return response
+    response
       .status(500)
       .json(
         new ApiResponse(
