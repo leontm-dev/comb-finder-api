@@ -32,11 +32,11 @@ export class MapsService {
 
   async getManyWithPatchRange(
     patch: number,
-    patchRange: number = 2,
+    patchRange: number = 0.02,
   ) {
     const maxPatchBoundary = 11; // after x.11 it goes to x+1.0
-    const minPatch: number = patch - patchRange / 100;
-    let maxPatch: number = patch + patchRange / 100;
+    const minPatch: number = patch - patchRange;
+    let maxPatch: number = patch + patchRange;
 
     if (
       maxPatch - Math.floor(maxPatch) >
@@ -44,7 +44,6 @@ export class MapsService {
     ) {
       maxPatch = maxPatch - maxPatchBoundary / 100 + 1;
     }
-
     return await this.mapModel.find({
       patch: {
         $gte: minPatch,
