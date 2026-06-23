@@ -78,4 +78,32 @@ export class FinderController {
         : undefined,
     );
   }
+
+  @Get('trending')
+  async findTrendingCombs(@Req() req: Request) {
+    const { patch, patchRange } = req.query;
+    let modPatchRange = undefined;
+
+    if (typeof patchRange !== 'string') {
+      modPatchRange = undefined;
+    } else if (isNaN(parseFloat(patchRange))) {
+      modPatchRange = undefined;
+    } else {
+      modPatchRange = parseFloat(patchRange);
+    }
+
+    let modPatch = undefined;
+
+    if (typeof patch !== 'string') {
+      modPatch = undefined;
+    } else if (isNaN(parseFloat(patch))) {
+      modPatch = undefined;
+    } else {
+      modPatch = parseFloat(patch);
+    }
+    return await this.finderService.getTrendingMaps(
+      modPatch,
+      modPatchRange,
+    );
+  }
 }
