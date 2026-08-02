@@ -1,4 +1,3 @@
-import { createMock } from '@golevelup/ts-jest';
 import {
   BadRequestException,
   Controller,
@@ -14,9 +13,9 @@ import {
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 import {
+  CompResult,
   FinderService,
-  type CombResult,
-  type TrendingResult,
+  Trending,
 } from 'src/finder/services/finder/finder.service';
 
 @ApiTags('Finder')
@@ -84,7 +83,7 @@ export class FinderController {
     example: 'above',
     enum: ['above', 'on', 'below'],
   })
-  @ApiOkResponse({ type: [createMock<CombResult>] })
+  @ApiOkResponse({ type: CompResult })
   async findComb(@Req() req: Request) {
     const {
       eventIds,
@@ -170,16 +169,7 @@ export class FinderController {
       'Example: patchRange 0.10 includes games played on patches from 11.02 up to 12.10. (uses the patch value 12.00)',
   })
   @ApiOkResponse({
-    type: [
-      createMock<{
-        result: TrendingResult;
-        events: {
-          name: string;
-          icon: string | null;
-          id: string;
-        }[];
-      }>,
-    ],
+    type: Trending,
   })
   async findTrendingCombs(@Req() req: Request) {
     const { patch, patchRange } = req.query;
