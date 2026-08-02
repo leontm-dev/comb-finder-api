@@ -33,6 +33,32 @@ type TrendingComb = {
   lossesCount: number;
   mapsCount: number;
 };
+
+export class CompResult implements CombResult {
+  agents: string[];
+  map: string;
+  team: {
+    iconUrl: string;
+    name: string;
+  };
+  won: boolean;
+  vod: string | null;
+  event: {
+    iconUrl: string | null;
+    title: string | null;
+  };
+  patch: number | null;
+  url: string;
+}
+
+export class Trending {
+  result: TrendingResult;
+  events: {
+    name: string;
+    icon: string | null;
+    id: string;
+  }[];
+}
 @Injectable()
 export class FinderService {
   constructor(
