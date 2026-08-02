@@ -1,6 +1,5 @@
 import { writeFile } from 'node:fs';
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
 import Bottleneck from 'bottleneck';
 import { EventsService } from 'src/events/services/events/events.service';
 import type { VlrMap } from 'src/maps/schemas/map.schema';
@@ -58,8 +57,7 @@ export class UpdaterService {
     private readonly eventsService: EventsService,
   ) {}
 
-  @Cron('0 0 1 * * *')
-  async updateMapsForLast10Events() {
+  async updateMapsForLast15Events() {
     this.logger.log('Started');
     try {
       await fetch(
@@ -75,7 +73,7 @@ export class UpdaterService {
     }
 
     const events =
-      await this.eventsService.getAllWithPagination(0, 10);
+      await this.eventsService.getAllWithPagination(0, 15);
 
     const data: Record<
       string,
@@ -143,7 +141,9 @@ export class UpdaterService {
             response.data.segments[0].maps.map(
               (map, index) => {
                 toBeCreated.push({
-                  name: map.map_name.toLowerCase() as TMaps,
+                  name: map.map_name
+                    .toLowerCase()
+                    .replace('pick', '') as TMaps,
                   agents: map.players.team1.map(
                     (team) => team.agent,
                   ),
@@ -160,14 +160,18 @@ export class UpdaterService {
                       index + 1
                     ]?.url || null,
                   patch: parseFloat(
-                    response.data.segments[0].date
-                      .split('Patch')[1]
-                      .trim(),
+                    String(
+                      response.data.segments[0].date.split(
+                        'Patch',
+                      )[1],
+                    ).trim(),
                   ),
-                  customId: `${response.data.segments[0].teams[0].name}_${matchId}_${map.map_name}`,
+                  customId: `${response.data.segments[0].teams[0].name}_${matchId}_${map.map_name.replace('PICK', '')}`,
                 });
                 toBeCreated.push({
-                  name: map.map_name.toLowerCase() as TMaps,
+                  name: map.map_name
+                    .toLowerCase()
+                    .replace('pick', '') as TMaps,
                   agents: map.players.team2
                     .map((team) => team.agent)
                     .map((agent) =>
@@ -186,11 +190,13 @@ export class UpdaterService {
                       index + 1
                     ]?.url || null,
                   patch: parseInt(
-                    response.data.segments[0].date
-                      .split('Patch')[1]
-                      .trim(),
+                    String(
+                      response.data.segments[0].date.split(
+                        'Patch',
+                      )[1],
+                    ).trim(),
                   ),
-                  customId: `${response.data.segments[0].teams[1].name}_${matchId}_${map.map_name}`,
+                  customId: `${response.data.segments[0].teams[1].name}_${matchId}_${map.map_name.replace('PICK', '')}`,
                 });
               },
             );
@@ -353,7 +359,9 @@ export class UpdaterService {
           response.data.segments[0].maps.map(
             (map, index) => {
               toBeCreated.push({
-                name: map.map_name.toLowerCase() as TMaps,
+                name: map.map_name
+                  .toLowerCase()
+                  .replace('pick', '') as TMaps,
                 agents: map.players.team1.map(
                   (team) => team.agent,
                 ),
@@ -381,10 +389,12 @@ export class UpdaterService {
                         .trim(),
                     )
                   : null,
-                customId: `${response.data.segments[0].teams[0].name}_${matchId}_${map.map_name}`,
+                customId: `${response.data.segments[0].teams[0].name}_${matchId}_${map.map_name.replace('PICK', '')}`,
               });
               toBeCreated.push({
-                name: map.map_name.toLowerCase() as TMaps,
+                name: map.map_name
+                  .toLowerCase()
+                  .replace('pick', '') as TMaps,
                 agents: map.players.team2
                   .map((team) => team.agent)
                   .map((agent) =>
@@ -414,7 +424,7 @@ export class UpdaterService {
                         .trim(),
                     )
                   : null,
-                customId: `${response.data.segments[0].teams[1].name}_${matchId}_${map.map_name}`,
+                customId: `${response.data.segments[0].teams[1].name}_${matchId}_${map.map_name.replace('PICK', '')}`,
               });
             },
           );

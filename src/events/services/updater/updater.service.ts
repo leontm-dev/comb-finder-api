@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
 
 import { EventsService } from '../events/events.service';
 
@@ -19,7 +18,6 @@ export class UpdaterService {
     private readonly eventsService: EventsService,
   ) {}
 
-  @Cron('0 30 0 * * *')
   async updateLastEvents() {
     const events = await fetch(
       `https://vlr.orlandomm.net/api/v1/events?tier=vct&page=1`,
@@ -36,8 +34,14 @@ export class UpdaterService {
       data: VlrEventSegment[];
     };
 
+    console.log(eventsData.data.length);
+
     const alreadySavedEvents =
       await this.eventsService.getAll();
+    console.log(
+      eventsData.data.length,
+      alreadySavedEvents.length,
+    );
     const createEvents: VlrEventSegment[] = [];
     eventsData.data.map((event) => {
       if (
@@ -48,7 +52,7 @@ export class UpdaterService {
       createEvents.push(event);
     });
 
-    await this.eventsService.createBulk(
+    const result = await this.eventsService.createBulk(
       createEvents.map((event) => ({
         dates: event.dates,
         vlrId: event.id,
@@ -57,6 +61,8 @@ export class UpdaterService {
         icon: event.img,
       })),
     );
+
+    console.log('Ended', result.length);
   }
 
   async updateAllEvents() {
