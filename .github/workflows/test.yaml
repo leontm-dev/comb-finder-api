@@ -1,0 +1,27 @@
+name: Testing application build
+
+on:
+  push:
+    branches:
+      - master # Ändere dies, falls dein Hauptbranch 'main' heißt
+  pull_request: # Lässt Dependabot und andere PRs die Tests ausführen
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22' # Aktualisiert für @scalar/nestjs-api-reference
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run Jest tests
+        run: yarn test
+      - name: Final build test
+        run: yarn run build
