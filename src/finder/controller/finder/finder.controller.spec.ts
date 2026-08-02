@@ -27,4 +27,12 @@ describe('FinderController', () => {
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
+
+  it('should have findTrendingCombs function', () => {
+    expect(controller.findTrendingCombs).toBeDefined();
+  });
+
+  it('should have findComb function', () => {
+    expect(controller.findComb).toBeDefined();
+  });
 });

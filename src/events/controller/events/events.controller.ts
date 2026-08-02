@@ -1,6 +1,8 @@
 import { Controller, Get } from '@nestjs/common';
+import { ApiExcludeController } from '@nestjs/swagger';
 import { EventsService } from 'src/events/services/events/events.service';
 
+@ApiExcludeController()
 @Controller('events')
 export class EventsController {
   constructor(

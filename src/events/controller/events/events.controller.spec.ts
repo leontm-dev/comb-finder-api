@@ -27,4 +27,8 @@ describe('EventsController', () => {
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
+
+  it('should have getEvents function', () => {
+    expect(controller.getEvents).toBeDefined();
+  });
 });
