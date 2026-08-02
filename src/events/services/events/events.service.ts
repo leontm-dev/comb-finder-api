@@ -32,7 +32,12 @@ export class EventsService {
       query.limit(limit);
     }
 
-    return await query.exec();
+    return await query
+      .sort({
+        vlrId: 'desc',
+      })
+      .collation({ locale: 'en_US', numericOrdering: true })
+      .exec();
   }
 
   async getOneById(id: Types.ObjectId) {
