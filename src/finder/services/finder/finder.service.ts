@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { EventsService } from 'src/events/services/events/events.service';
 import { MapsService } from 'src/maps/services/maps/maps.service';
 
-type CombResult = {
+export type CombResult = {
   agents: string[];
   map: string;
   team: {
@@ -19,7 +19,7 @@ type CombResult = {
   url: string;
 };
 
-type TrendingResult = Record<string, TrendingEvent>;
+export type TrendingResult = Record<string, TrendingEvent>;
 type TrendingEvent = Record<string, TrendingMap>;
 type TrendingMap = Record<string, TrendingComb>;
 type TrendingComb = {
