@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ApiProperty } from '@nestjs/swagger';
 import { EventsService } from 'src/events/services/events/events.service';
 import { MapsService } from 'src/maps/services/maps/maps.service';
 
@@ -20,6 +21,28 @@ export type CombResult = {
 };
 
 export type TrendingResult = Record<string, TrendingEvent>;
+class TrendingCompResponseTeams {
+  name: string;
+  icon: string;
+  playedCombCount: number;
+}
+class TrendingCompResponse implements TrendingComb {
+  teams: TrendingCompResponseTeams[];
+  patches: number[];
+  winsCount: number;
+  lossesCount: number;
+  mapsCount: number;
+}
+class TrendingMapResponse {
+  [x: string]: TrendingCompResponse;
+}
+class TrendingEventResponseResult {
+  [x: string]: TrendingMapResponse;
+}
+class TrendingResultResponse {
+  [x: string]: TrendingEventResponseResult;
+}
+
 type TrendingEvent = Record<string, TrendingMap>;
 type TrendingMap = Record<string, TrendingComb>;
 type TrendingComb = {
@@ -34,31 +57,121 @@ type TrendingComb = {
   mapsCount: number;
 };
 
+class CompResultTeam {
+  @ApiProperty({
+    name: 'iconUrl',
+    description: 'A url to the team logo (please check)',
+    nullable: false,
+    type: String,
+  })
+  iconUrl: string;
+  @ApiProperty({
+    name: 'name',
+    description: 'The name of the team',
+    nullable: false,
+    type: String,
+    example: 'LOUD',
+  })
+  name: string;
+}
+class CompResultEvent {
+  @ApiProperty({
+    name: 'iconUrl',
+    type: String,
+    nullable: true,
+  })
+  iconUrl: string | null;
+  @ApiProperty({
+    name: 'title',
+    type: String,
+    nullable: true,
+  })
+  title: string | null;
+}
 export class CompResult implements CombResult {
+  @ApiProperty({
+    name: 'agents',
+    type: [String],
+    maxItems: 5,
+    uniqueItems: true,
+    minItems: 5,
+    example: ['killjoy', 'fade', 'raze', 'omen', 'phoenix'],
+    nullable: false,
+  })
   agents: string[];
+  @ApiProperty({
+    name: 'map',
+    type: String,
+    nullable: false,
+    example: 'summit',
+  })
   map: string;
-  team: {
-    iconUrl: string;
-    name: string;
-  };
+  @ApiProperty({ name: 'team', nullable: false })
+  team: CompResultTeam;
+  @ApiProperty({
+    name: 'won',
+    type: Boolean,
+    nullable: false,
+    example: true,
+  })
   won: boolean;
+  @ApiProperty({
+    name: 'vod',
+    description: 'Url to a vod, not pre-checked!',
+    nullable: true,
+    type: String,
+  })
   vod: string | null;
-  event: {
-    iconUrl: string | null;
-    title: string | null;
-  };
+  @ApiProperty({ name: 'event', nullable: false })
+  event: CompResultEvent;
+  @ApiProperty({
+    name: 'patch',
+    type: Number,
+    nullable: false,
+  })
   patch: number | null;
+  @ApiProperty({
+    name: 'url',
+    description: 'Url to the vlr page (map not selected)',
+    nullable: false,
+    type: String,
+  })
   url: string;
 }
 
-export class Trending {
-  result: TrendingResult;
-  events: {
-    name: string;
-    icon: string | null;
-    id: string;
-  }[];
+class TrendingEventResponse {
+  @ApiProperty({
+    name: 'name',
+    type: String,
+    nullable: false,
+  })
+  name: string;
+  @ApiProperty({
+    name: 'icon',
+    type: String,
+    nullable: true,
+  })
+  icon: string | null;
+  @ApiProperty({
+    name: 'id',
+    type: String,
+    description: 'vlr id of the event',
+    nullable: false,
+  })
+  id: string;
 }
+export class Trending {
+  @ApiProperty({ type: TrendingResultResponse })
+  result: TrendingResult;
+  @ApiProperty({
+    name: 'events',
+    nullable: false,
+    default: [],
+    type: [TrendingEventResponse],
+  })
+  events: TrendingEventResponse[];
+}
+
 @Injectable()
 export class FinderService {
   constructor(
