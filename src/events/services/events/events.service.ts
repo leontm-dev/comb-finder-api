@@ -20,7 +20,13 @@ export class EventsService {
   }
 
   async getAll() {
-    return await this.model.find().exec();
+    return await this.model
+      .find()
+      .sort({
+        vlrId: 'desc',
+      })
+      .collation({ locale: 'en_US', numericOrdering: true })
+      .exec();
   }
 
   async getAllWithPagination(
