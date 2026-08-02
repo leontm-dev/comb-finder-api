@@ -3,7 +3,7 @@ import { ApiExcludeController } from '@nestjs/swagger';
 import { UpdaterService } from 'src/events/services/updater/updater.service';
 
 @ApiExcludeController()
-@Controller('updater')
+@Controller('events/updater')
 export class UpdaterController {
   constructor(
     private readonly updaterService: UpdaterService,
