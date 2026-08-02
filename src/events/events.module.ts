@@ -4,6 +4,7 @@ import { EventsController } from './controller/events/events.controller';
 import { VlrEvent, VlrEventSchema } from './schemas/event.schema';
 import { EventsService } from './services/events/events.service';
 import { UpdaterService } from './services/updater/updater.service';
+import { UpdaterController } from './controller/updater/updater.controller';
 
 @Module({
   imports: [
@@ -12,7 +13,7 @@ import { UpdaterService } from './services/updater/updater.service';
     ]),
   ],
   providers: [UpdaterService, EventsService],
-  controllers: [EventsController],
+  controllers: [EventsController, UpdaterController],
   exports: [EventsService],
 })
 export class EventsModule {}

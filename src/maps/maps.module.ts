@@ -5,6 +5,7 @@ import { EventsModule } from 'src/events/events.module';
 import { VlrMap, VlrMapSchema } from './schemas/map.schema';
 import { MapsService } from './services/maps/maps.service';
 import { UpdaterService } from './services/updater/updater.service';
+import { UpdaterController } from './controller/updater/updater.controller';
 
 @Module({
   imports: [
@@ -15,5 +16,6 @@ import { UpdaterService } from './services/updater/updater.service';
   ],
   providers: [UpdaterService, MapsService],
   exports: [MapsService],
+  controllers: [UpdaterController],
 })
 export class MapsModule {}
