@@ -161,13 +161,23 @@ export class UpdaterService {
                     response.data.segments[0].vods[
                       index + 1
                     ]?.url || null,
-                  patch: parseFloat(
-                    String(
-                      response.data.segments[0].date.split(
-                        'Patch',
-                      )[1],
-                    ).trim(),
-                  ),
+                  patch: isNaN(
+                    parseInt(
+                      String(
+                        response.data.segments[0].date.split(
+                          'Patch',
+                        )[1],
+                      ).trim(),
+                    ),
+                  )
+                    ? null
+                    : parseInt(
+                        String(
+                          response.data.segments[0].date.split(
+                            'Patch',
+                          )[1],
+                        ).trim(),
+                      ),
                   customId: `${response.data.segments[0].teams[0].name}_${matchId}_${map.map_name.replace('PICK', '')}`,
                 });
                 toBeCreated.push({
@@ -191,13 +201,23 @@ export class UpdaterService {
                     response.data.segments[0].vods[
                       index + 1
                     ]?.url || null,
-                  patch: parseInt(
-                    String(
-                      response.data.segments[0].date.split(
-                        'Patch',
-                      )[1],
-                    ).trim(),
-                  ),
+                  patch: isNaN(
+                    parseInt(
+                      String(
+                        response.data.segments[0].date.split(
+                          'Patch',
+                        )[1],
+                      ).trim(),
+                    ),
+                  )
+                    ? null
+                    : parseInt(
+                        String(
+                          response.data.segments[0].date.split(
+                            'Patch',
+                          )[1],
+                        ).trim(),
+                      ),
                   customId: `${response.data.segments[0].teams[1].name}_${matchId}_${map.map_name.replace('PICK', '')}`,
                 });
               },
@@ -378,19 +398,23 @@ export class UpdaterService {
                 vodUrl:
                   response.data.segments[0].vods[index + 1]
                     ?.url || null,
-                patch: response.data.segments[0].date.split(
-                  'Patch',
-                )[1]
-                  ? parseFloat(
-                      (
+                patch: isNaN(
+                  parseInt(
+                    String(
+                      response.data.segments[0].date.split(
+                        'Patch',
+                      )[1],
+                    ).trim(),
+                  ),
+                )
+                  ? null
+                  : parseInt(
+                      String(
                         response.data.segments[0].date.split(
                           'Patch',
-                        )[1] || ''
-                      )
-                        .toString()
-                        .trim(),
-                    )
-                  : null,
+                        )[1],
+                      ).trim(),
+                    ),
                 customId: `${response.data.segments[0].teams[0].name}_${matchId}_${map.map_name.replace('PICK', '')}`,
               });
               toBeCreated.push({
@@ -413,19 +437,23 @@ export class UpdaterService {
                 vodUrl:
                   response.data.segments[0].vods[index + 1]
                     ?.url || null,
-                patch: response.data.segments[0].date.split(
-                  'Patch',
-                )[1]
-                  ? parseFloat(
-                      (
+                patch: isNaN(
+                  parseInt(
+                    String(
+                      response.data.segments[0].date.split(
+                        'Patch',
+                      )[1],
+                    ).trim(),
+                  ),
+                )
+                  ? null
+                  : parseInt(
+                      String(
                         response.data.segments[0].date.split(
                           'Patch',
-                        )[1] || ''
-                      )
-                        .toString()
-                        .trim(),
-                    )
-                  : null,
+                        )[1],
+                      ).trim(),
+                    ),
                 customId: `${response.data.segments[0].teams[1].name}_${matchId}_${map.map_name.replace('PICK', '')}`,
               });
             },
