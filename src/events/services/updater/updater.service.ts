@@ -14,7 +14,9 @@ type VlrEventSegment = {
 
 @Injectable()
 export class UpdaterService {
-  private readonly logger = new Logger(UpdaterService.name);
+  private readonly logger = new Logger(
+    'EventsUpdaterService',
+  );
   constructor(
     private readonly eventsService: EventsService,
   ) {}

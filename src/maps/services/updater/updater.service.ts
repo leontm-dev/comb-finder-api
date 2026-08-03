@@ -51,7 +51,9 @@ export class UpdaterService {
     maxConcurrent: 1, // Stellt sicher, dass nicht zwei Requests exakt zeitgleich loslaufen
   });
 
-  private readonly logger = new Logger(UpdaterService.name);
+  private readonly logger = new Logger(
+    'MapsUpdaterService',
+  );
   constructor(
     private readonly mapsService: MapsService,
     private readonly eventsService: EventsService,
