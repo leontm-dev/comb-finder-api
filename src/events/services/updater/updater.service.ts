@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { EventsService } from '../events/events.service';
 
@@ -14,19 +14,25 @@ type VlrEventSegment = {
 
 @Injectable()
 export class UpdaterService {
+  private readonly logger = new Logger(UpdaterService.name);
   constructor(
     private readonly eventsService: EventsService,
   ) {}
 
   async updateLastEvents() {
+    this.logger.log('updateLastEvents job started!');
     const events = await fetch(
       `https://vlr.orlandomm.net/api/v1/events?tier=vct&page=1`,
       {
         method: 'GET',
         headers: {
-          'user-agent': 'testing',
+          'user-agent':
+            'comp-finder api by leontm (github: leontm-dev)',
         },
       },
+    );
+    this.logger.log(
+      events.ok ? 'Response ok' : 'Response not ok',
     );
 
     const eventsData = (await events.json()) as {
@@ -34,13 +40,16 @@ export class UpdaterService {
       data: VlrEventSegment[];
     };
 
-    console.log(eventsData.data.length);
+    this.logger.log(
+      `EventsData length: ${eventsData.data.length}`,
+    );
 
     const alreadySavedEvents =
-      await this.eventsService.getAll();
-    console.log(
-      eventsData.data.length,
-      alreadySavedEvents.length,
+      await this.eventsService.getManyByVlrIds(
+        eventsData.data.map((e) => e.id),
+      );
+    this.logger.log(
+      `AlreadySavedEvents length: ${alreadySavedEvents.length}`,
     );
     const createEvents: VlrEventSegment[] = [];
     eventsData.data.map((event) => {
@@ -62,7 +71,7 @@ export class UpdaterService {
       })),
     );
 
-    console.log('Ended', result.length);
+    this.logger.log(`Ended with results: ${result.length}`);
   }
 
   async updateAllEvents() {
