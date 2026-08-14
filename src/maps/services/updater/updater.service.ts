@@ -97,7 +97,14 @@ export class UpdaterService {
               {
                 method: 'GET',
               },
-            ).then((res) => res.json()),
+            )
+              .then((res) => res.json())
+              .catch((err) => {
+                this.logger.error(
+                  `Fetch failed for event: ${event.vlrId}`,
+                  err,
+                );
+              }),
         )) as EventMapsResponse;
 
         // const alreadySavedEventMaps = maps.filter(
@@ -119,19 +126,26 @@ export class UpdaterService {
                 fetch(
                   `https://vlrgg-scraping-api.onrender.com/v2/match/details?match_id=${matchId}`,
                   { method: 'GET' },
-                ).then((res) => {
-                  if (!res.ok) {
-                    this.logger.log(
-                      res.status,
-                      res.statusText,
-                      res.ok,
-                      res.headers,
-                    );
-                    return null;
-                  }
+                )
+                  .then((res) => {
+                    if (!res.ok) {
+                      this.logger.log(
+                        res.status,
+                        res.statusText,
+                        res.ok,
+                        res.headers,
+                      );
+                      return null;
+                    }
 
-                  return res.json();
-                }),
+                    return res.json();
+                  })
+                  .catch((err) => {
+                    this.logger.error(
+                      `Match details fetch for ${matchId} failed`,
+                      err,
+                    );
+                  }),
               )) as MapResponse | null;
 
             if (!response || !response.data.segments[0]) {

@@ -32,7 +32,10 @@ export class UpdaterService {
             'comp-finder api by leontm (github: leontm-dev)',
         },
       },
-    );
+    ).catch((err) => {
+      this.logger.error('First fetch failed!', err);
+      throw err;
+    });
     this.logger.log(
       events.ok ? 'Response ok' : 'Response not ok',
     );
