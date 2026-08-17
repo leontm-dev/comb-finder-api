@@ -3,7 +3,7 @@ name: Testing application build and building image
 on:
   push:
     branches:
-      - master # Ändere dies, falls dein Hauptbranch 'main' heißt
+      - main
   pull_request:
 
 env:
