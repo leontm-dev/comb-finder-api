@@ -69,6 +69,6 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /opt/stacks/meine-nestjs-api
+            cd /opt/stacks/comp-finder
             docker compose pull
             docker compose up -d
