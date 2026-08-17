@@ -1,0 +1,19 @@
+services:
+  comp-finder-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: comp_finder_api
+    restart: always
+    ports:
+      - '3000:3030'
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # Hier kannst du weitere Umgebungsvariablen wie z.B. DATABASE_URL ergänzen
+    networks:
+      - proxy-net
+
+networks:
+  proxy-net:
+    external: true
