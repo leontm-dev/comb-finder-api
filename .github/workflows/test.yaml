@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master # Ändere dies, falls dein Hauptbranch 'main' heißt
-  pull_request: # Lässt Dependabot und andere PRs die Tests ausführen
+  pull_request:
 
 env:
   REGISTRY: ghcr.io
@@ -31,6 +31,7 @@ jobs:
         run: yarn run build
 
   build-and-push:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     needs: test
     steps:
@@ -57,6 +58,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
+    if: github.event_name == 'push'
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
