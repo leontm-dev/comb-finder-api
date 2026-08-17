@@ -31,19 +31,18 @@ jobs:
         run: yarn run build
 
   deploy:
-    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 1. SSH-Key auf dem GitHub Runner konfigurieren
-      - name: Install SSH Key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          known_hosts: unnecessary
-          if_key_exists: replace
+      # 1. SSH-Schlüssel konfigurieren & Host-Key automatisch akzeptieren
+      - name: Install SSH Key and add Host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
 
       # 2. Quellcode mit nativem rsync auf den Server übertragen
       - name: Sync code to Server via rsync
@@ -53,7 +52,7 @@ jobs:
             --exclude='node_modules' \
             --exclude='dist' \
             --exclude='.env*' \
-            ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/stacks/comp-finder/
+            ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/stacks/comp-finder-api/
 
       # 3. Auf dem Server das Image lokal in Dockge bauen & neu starten
       - name: Build and Restart in Dockge
@@ -63,5 +62,5 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /opt/stacks/comp-finder
+            cd /opt/stacks/comp-finder-api
             docker compose up -d --build
