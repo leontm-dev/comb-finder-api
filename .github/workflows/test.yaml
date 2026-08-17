@@ -31,6 +31,7 @@ jobs:
         run: yarn run build
 
   deploy:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
