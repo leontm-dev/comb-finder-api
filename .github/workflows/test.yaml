@@ -64,4 +64,4 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /opt/stacks/comp-finder-api
-            docker compose up -d --build
+            docker-compose up -d --build
