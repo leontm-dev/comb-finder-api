@@ -1,3 +1,5 @@
+import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import {
   DocumentBuilder,
@@ -23,6 +25,11 @@ async function bootstrap() {
       methods: ['GET', 'PATCH'],
     },
   });
+  const configService = app.get(ConfigService);
+  const logger = new Logger('Bootstrap');
+
+  const testVar = configService.get('DATABASE_URL');
+  logger.log(`Test Environment Variable: ${testVar}`);
   app.use(compression());
   const documentConfig = new DocumentBuilder()
     .setTitle('comp-finder API')
