@@ -8,8 +8,8 @@ services:
     ports:
       - '3030:3030'
     environment:
-      - NODE_ENV=production
-      - PORT=3030
+      NODE_ENV: 'production'
+      PORT: 3030
       # Hier kannst du weitere Umgebungsvariablen wie z.B. DATABASE_URL ergänzen
     networks:
       - proxy-net
