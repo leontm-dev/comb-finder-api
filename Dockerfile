@@ -2,6 +2,8 @@
 # BUILD FOR LOCAL DEVELOPMENT
 ###################
 
+
+
 FROM node:22-alpine AS development
 
 WORKDIR /usr/src/app
@@ -41,6 +43,8 @@ USER node
 ###################
 
 FROM node:22-alpine AS production
+
+LABEL org.opencontainers.image.source https://github.com/leontm-dev/comb-finder-api
 
 COPY --chown=node:node --from=build /usr/src/app/node_modules ./node_modules
 COPY --chown=node:node --from=build /usr/src/app/dist ./dist
