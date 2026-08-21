@@ -33,6 +33,7 @@ jobs:
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
     permissions:
       contents: read
       packages: write
