@@ -63,7 +63,7 @@ export class UpdaterService {
     this.logger.log('Started');
     try {
       await fetch(
-        'https://vlrgg-scraping-api.onrender.com/health',
+        'https://scraper.comp-finder.leontm.me/health',
         {
           method: 'GET',
         },
@@ -93,7 +93,7 @@ export class UpdaterService {
         const eventMaps = (await this.reqLimiter.schedule(
           () =>
             fetch(
-              `https://vlrgg-scraping-api.onrender.com/v2/events/matches?event_id=${event.vlrId}`,
+              `https://scraper.comp-finder.leontm.me/v2/events/matches?event_id=${event.vlrId}`,
               {
                 method: 'GET',
               },
@@ -124,7 +124,7 @@ export class UpdaterService {
             const response =
               (await this.reqLimiter.schedule(() =>
                 fetch(
-                  `https://vlrgg-scraping-api.onrender.com/v2/match/details?match_id=${matchId}`,
+                  `https://scraper.comp-finder.leontm.me/v2/match/details?match_id=${matchId}`,
                   { method: 'GET' },
                 )
                   .then((res) => {
@@ -302,7 +302,7 @@ export class UpdaterService {
     this.logger.log('Started');
     try {
       await fetch(
-        'https://vlrgg-scraping-api.onrender.com/health',
+        'https://scraper.comp-finder.leontm.me/health',
         {
           method: 'GET',
         },
@@ -333,7 +333,7 @@ export class UpdaterService {
       const eventMaps = (await this.reqLimiter.schedule(
         () =>
           fetch(
-            `https://vlrgg-scraping-api.onrender.com/v2/events/matches?event_id=${event.vlrId}`,
+            `https://scraper.comp-finder.leontm.me/v2/events/matches?event_id=${event.vlrId}`,
             {
               method: 'GET',
             },
@@ -362,7 +362,7 @@ export class UpdaterService {
           const response = (await this.reqLimiter.schedule(
             () =>
               fetch(
-                `https://vlrgg-scraping-api.onrender.com/v2/match/details?match_id=${matchId}`,
+                `https://scraper.comp-finder.leontm.me/v2/match/details?match_id=${matchId}`,
                 { method: 'GET' },
               ).then((res) => {
                 if (!res.ok) {
