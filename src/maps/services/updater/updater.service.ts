@@ -298,6 +298,245 @@ export class UpdaterService {
     this.logger.log('Ended');
   }
 
+  async updateMapsForLast100Events() {
+    this.logger.log('Started');
+    try {
+      await fetch(
+        'https://scraper.comp-finder.leontm.me/health',
+        {
+          method: 'GET',
+        },
+      );
+    } catch (error) {
+      this.logger.error(error);
+      this.logger.log('Health check failed!');
+      return;
+    }
+
+    const events =
+      await this.eventsService.getAllWithPagination(0, 100);
+
+    const data: Record<
+      string,
+      {
+        eventId: string;
+        mapsCreated: number;
+        totalNumberOfGames: number;
+        totalNumberOfMaps: number;
+        failedCount: number;
+        failedIds: string[];
+      }
+    > = {};
+    await Promise.all(
+      events.map(async (event) => {
+        const eventMaps = (await this.reqLimiter.schedule(
+          () =>
+            fetch(
+              `https://scraper.comp-finder.leontm.me/v2/events/matches?event_id=${event.vlrId}`,
+              {
+                method: 'GET',
+              },
+            )
+              .then((res) => res.json())
+              .catch((err) => {
+                this.logger.error(
+                  `Fetch failed for event: ${event.vlrId}`,
+                  err,
+                );
+              }),
+        )) as EventMapsResponse;
+
+        // const alreadySavedEventMaps = maps.filter(
+        //   (map) => map.eventId === event.vlrId,
+        // );
+        const matchIds = eventMaps.data.segments
+          .filter(
+            (segment) => segment.status === 'Completed',
+          )
+          .map((segment) => segment.match_id);
+
+        const toBeCreated: Partial<VlrMap>[] = [];
+        let failed = 0;
+        const failedIds: string[] = [];
+        await Promise.all(
+          matchIds.map(async (matchId) => {
+            const response =
+              (await this.reqLimiter.schedule(() =>
+                fetch(
+                  `https://scraper.comp-finder.leontm.me/v2/match/details?match_id=${matchId}`,
+                  { method: 'GET' },
+                )
+                  .then((res) => {
+                    if (!res.ok) {
+                      this.logger.log(
+                        res.status,
+                        res.statusText,
+                        res.ok,
+                        res.headers,
+                      );
+                      return null;
+                    }
+
+                    return res.json();
+                  })
+                  .catch((err) => {
+                    this.logger.error(
+                      `Match details fetch for ${matchId} failed`,
+                      err,
+                    );
+                  }),
+              )) as MapResponse | null;
+
+            if (!response || !response.data.segments[0]) {
+              failed++;
+              failedIds.push(matchId);
+              return;
+            }
+
+            response.data.segments[0].maps.map(
+              (map, index) => {
+                toBeCreated.push({
+                  name: map.map_name
+                    .toLowerCase()
+                    .replace('pick', '') as TMaps,
+                  agents: map.players.team1.map(
+                    (team) => team.agent,
+                  ),
+                  vlrId: matchId,
+                  eventId: event.vlrId,
+                  team: response.data.segments[0].teams[0]
+                    .name,
+                  teamLogoUrl:
+                    response.data.segments[0].teams[0].logo,
+                  won: response.data.segments[0].teams[0]
+                    .is_winner,
+                  vodUrl:
+                    response.data.segments[0].vods[
+                      index + 1
+                    ]?.url || null,
+                  patch: isNaN(
+                    parseInt(
+                      String(
+                        response.data.segments[0].date.split(
+                          'Patch',
+                        )[1],
+                      ).trim(),
+                    ),
+                  )
+                    ? null
+                    : parseInt(
+                        String(
+                          response.data.segments[0].date.split(
+                            'Patch',
+                          )[1],
+                        ).trim(),
+                      ),
+                  customId: `${response.data.segments[0].teams[0].name}_${matchId}_${map.map_name.replace('PICK', '')}`,
+                });
+                toBeCreated.push({
+                  name: map.map_name
+                    .toLowerCase()
+                    .replace('pick', '') as TMaps,
+                  agents: map.players.team2
+                    .map((team) => team.agent)
+                    .map((agent) =>
+                      agent.toLowerCase().trim(),
+                    ),
+                  vlrId: matchId,
+                  eventId: event.vlrId,
+                  team: response.data.segments[0].teams[1]
+                    .name,
+                  teamLogoUrl:
+                    response.data.segments[0].teams[1].logo,
+                  won: response.data.segments[0].teams[1]
+                    .is_winner,
+                  vodUrl:
+                    response.data.segments[0].vods[
+                      index + 1
+                    ]?.url || null,
+                  patch: isNaN(
+                    parseInt(
+                      String(
+                        response.data.segments[0].date.split(
+                          'Patch',
+                        )[1],
+                      ).trim(),
+                    ),
+                  )
+                    ? null
+                    : parseInt(
+                        String(
+                          response.data.segments[0].date.split(
+                            'Patch',
+                          )[1],
+                        ).trim(),
+                      ),
+                  customId: `${response.data.segments[0].teams[1].name}_${matchId}_${map.map_name.replace('PICK', '')}`,
+                });
+              },
+            );
+          }),
+        );
+
+        const chunkArray = <T>(
+          array: T[],
+          size: number,
+        ): T[][] => {
+          const chunks: T[][] = [];
+          for (let i = 0; i < array.length; i += size) {
+            chunks.push(array.slice(i, i + size));
+          }
+          return chunks;
+        };
+        const chunks = chunkArray(toBeCreated, 200);
+        let mapsCreatedCount = 0;
+
+        for (const chunk of chunks) {
+          try {
+            const result =
+              await this.mapsService.createBulk(chunk);
+            mapsCreatedCount += result.length;
+          } catch (error) {
+            failedIds.push(
+              ...chunk.map((c) => c.customId || ''),
+            );
+            console.log(error);
+          }
+        }
+
+        const dataObject: {
+          eventId: string;
+          mapsCreated: number;
+          totalNumberOfGames: number;
+          totalNumberOfMaps: number;
+          failedCount: number;
+          failedIds: string[];
+        } = {
+          eventId: event.vlrId,
+          mapsCreated: mapsCreatedCount,
+          totalNumberOfGames:
+            eventMaps.data.segments.length,
+          totalNumberOfMaps: toBeCreated.length,
+          failedCount: failed,
+          failedIds,
+        };
+        this.logger.log(event.title, dataObject);
+        data[event.title] = dataObject;
+      }),
+    );
+
+    // writeFile(
+    //   'results.json',
+    //   JSON.stringify(data),
+    //   (err) => {
+    //     if (err) {
+    //       console.error(err);
+    //     }
+    //   },
+    // );
+    this.logger.log('Ended');
+  }
+
   async updateMapsForAllEvents() {
     this.logger.log('Started');
     try {

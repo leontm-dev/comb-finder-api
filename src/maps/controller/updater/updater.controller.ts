@@ -13,4 +13,9 @@ export class UpdaterController {
   async runCronJob() {
     return await this.updaterService.updateMapsForLast15Events();
   }
+
+  @Patch('cron/1100')
+  async runCronJobForAllEvents() {
+    return await this.updaterService.updateMapsForLast100Events();
+  }
 }
