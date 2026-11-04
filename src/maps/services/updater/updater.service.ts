@@ -525,15 +525,15 @@ export class UpdaterService {
       }),
     );
 
-    // writeFile(
-    //   'results.json',
-    //   JSON.stringify(data),
-    //   (err) => {
-    //     if (err) {
-    //       console.error(err);
-    //     }
-    //   },
-    // );
+    writeFile(
+      `results-100-${Date.now()}.json`,
+      JSON.stringify(data),
+      (err) => {
+        if (err) {
+          console.error(err);
+        }
+      },
+    );
     this.logger.log('Ended');
   }
 
