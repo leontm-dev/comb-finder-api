@@ -22,7 +22,7 @@ jobs:
           version: 12.16.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7.0.0
+        uses: actions/setup-node@v7.1.0
         with:
           node-version: '22' # Aktualisiert für @scalar/nestjs-api-reference
           cache: 'pnpm'
