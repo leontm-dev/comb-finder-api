@@ -38,7 +38,7 @@
     "class-validator": "^0.15.1",
     "compression": "^1.8.2",
     "dotenv": "^17.4.2",
-    "mongoose": "^9.9.2",
+    "mongoose": "^9.11.4",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "vlr-client": "^1.0.4",
